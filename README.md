@@ -1,99 +1,144 @@
+# 🧭 Manual de Uso — Script de Exportação de Layouts QGIS
+  **Criado por:** M. Martinelli  
+  **Data de criação:** 30/10/2025  
+  **Última alteração:** 31/10/2025  
 
-    """
-🧭 Docstring detalhado — Script de Exportação de Layouts QGIS (passo a passo)
-Script: Exportação automática de layouts para PDF e PNG
-Autor: M. Martinelli
-Criado em: 30/10/2025 | Atualizado: 31/10/2025
+  ---
 
-Objetivo:
-Exportar todos os layouts do projeto QGIS atual para arquivos PDF e PNG,
-salvando-os numa pasta de saída local, sem modificar camadas ou dados do projeto.
+  ## 📘 Objetivo do Script
+        Este script tem como finalidade **exportar automaticamente todos os layouts existentes** em um projeto do **QGIS** para os formatos **PDF** e **PNG**, garantindo uma exportação limpa e padronizada, sem modificar nada no projeto original.
 
-AVISO IMPORTANTE:
-⚠️⚠️⚠️ SEMPRE FAÇA UMA CÓPIA DO PROJETO ANTES DE EXECUTAR. ⚠️⚠️⚠️
+        Ideal para gerar impressões rápidas de todos os layouts com um único comando, de forma segura e controlada.
 
-Passo a passo (funcionamento interno):
+  ---
 
-1) Importações e preparação
-   - O script importa módulos necessários (QgsProject, QgsLayoutExporter, os, datetime).
-   - Observação: o script usa a função re.sub para sanitizar nomes, portanto
-     é necessário `import re` se não estiver presente.
+  ## ⚙️ Pré-requisitos
+        1. O **projeto QGIS (.qgz)** deve estar **salvo** antes da execução.  
+        2. Execute o script no **Console Python do QGIS** (`Ctrl + Alt + P`).  
+        3. Certifique-se de que o projeto contém layouts criados.
 
-2) Configuração do modo de arquivo
-   - Variável `modo_arquivos` controla como lidar com arquivos já existentes:
-       - "renomear": cria versões numeradas (ex.: Layout, Layout_1, Layout_2...)
-       - "substituir": sobrescreve os arquivos existentes com o mesmo nome
-   - Se `modo_arquivos` estiver com valor inválido, o script para e imprime aviso.
+  ---
 
-3) Definição da pasta de saída
-   - `output_folder` é construída a partir do diretório do projeto (`QgsProject.instance().homePath()`)
-     e o nome "exports", a menos que você descomente e defina um caminho absoluto.
-   - O script cria a pasta de saída se ela não existir (`os.makedirs(output_folder)`).
+  ## 📂 Estrutura e Comportamento
 
-4) Carregamento do projeto e coleta de layouts
-   - `project = QgsProject.instance()` obtém a instância atual do projeto aberto no QGIS.
-   - `layouts = project.layoutManager().layouts()` retorna a lista de layouts (objetos QgsLayout).
+    ### 🧱 Criação da Pasta de Saída
+          - O script cria automaticamente uma pasta chamada **`exports`** dentro do **diretório onde o projeto está salvo**.  
+            Exemplo:
+            C:\MeusProjetosQGIS\Projeto_A\exports
 
-5) Validação inicial
-   - Se não houver layouts, o script imprime aviso e termina.
-   - Caso contrário, imprime quantos layouts serão exportados e o caminho de saída.
+          - Caso prefira, é possível definir um caminho fixo no código, alterando esta linha:
+          ```python
+          #output_folder = r"C:\Users\Public\Documentos de Exportação QGIS"
 
-6) Loop por cada layout
-   - Para cada layout:
-     a) Obtém o nome do layout (`layout.name().strip()`).
-     b) Remove caracteres inválidos para nomes de arquivo usando expressão regular:
-        `re.sub(r'[<>:"/\\|?*]', '', layout_name)` — evita problemas em Windows/Linux/macOS.
-     c) Define caminhos completos para PDF e PNG (`pdf_path`, `png_path`).
+    🔄 Controle de Arquivos Existentes
 
-7) Política de arquivos já existentes
-   - Se `modo_arquivos` == "renomear":
-       - Incrementa um sufixo `_1`, `_2`, ... até encontrar nomes livres para PDF e PNG.
-   - Se `modo_arquivos` == "substituir":
-       - Prossegue com os caminhos definidos, sobrescrevendo arquivos existentes.
-   - Se `modo_arquivos` for inválido:
-       - Imprime erro e interrompe a execução.
+          O comportamento ao lidar com arquivos já existentes é controlado pela variável:
 
-8) Exportação propriamente dita
-   - Cria um `QgsLayoutExporter(layout)` para o layout em questão.
-   - Exporta PDF:
-       - `pdf_settings = QgsLayoutExporter.PdfExportSettings()`
-       - `result_pdf = exporter.exportToPdf(pdf_path, pdf_settings)`
-       - Verifica se `result_pdf == QgsLayoutExporter.Success`; se não, imprime erro.
-   - Exporta PNG:
-       - `img_settings = QgsLayoutExporter.ImageExportSettings()`
-       - `result_png = exporter.exportToImage(png_path, img_settings)`
-       - Verifica se `result_png == QgsLayoutExporter.Success`; se não, imprime erro.
-   - Se ambos os exports retornarem sucesso, imprime mensagem de confirmação.
+          modo_arquivos = "renomear"
 
-9) Tratamento de exceções
-   - A exportação é envolvida em blocos try/except para capturar erros inesperados
-     (ex.: problemas de I/O, permissões, objetos corrompidos) e imprimir uma mensagem
-     com o erro capturado sem encerrar o processamento dos demais layouts.
+          Opções disponíveis:
 
-10) Finalização
-    - Após o loop, imprime mensagem de conclusão.
-    - Nota: O script **não altera** o conteúdo do projeto (camadas, estilos, dados).
-    - Arquivos gerados ficam na pasta `output_folder` e são permanentes no disco.
+          "renomear" → Cria versões numeradas quando o arquivo já existe.
+          Exemplo:
 
-Limitações e recomendações:
-- O script usa as configurações padrão de exportação (PdfExportSettings / ImageExportSettings).
-  Se precisar ajustar DPI, compressão, resolução de imagem, papel, recortes ou camadas visíveis,
-  deve configurar explicitamente os objetos `PdfExportSettings` / `ImageExportSettings`.
-- Teste em um projeto de cópia antes de rodar em produção.
-- Se os nomes dos layouts forem muito longos ou repetitivos, considere truncar ou padronizar
-  nomes antes da exportação para evitar path demasiado longo.
-- Se o projeto estiver em uma pasta com espaços (ex.: "Meus Documentos/Export QGIS"), o script
-  funciona normalmente — `os.path.join` lida com espaços. Caso prefira, defina explicitamente um caminho
-  bruto (r-prefixed) em `output_folder`.
+          MapaPrincipal.pdf
+          MapaPrincipal_1.pdf
+          MapaPrincipal_2.pdf
 
-Resultados esperados:
-- Pasta `exports` contendo para cada layout dois arquivos: `<layout_name>.pdf` e `<layout_name>.png`
-  (ou versões numeradas se `modo_arquivos` = "renomear").
-- Mensagens de log no console com sucesso/erro por layout.
 
-Segurança:
-- O script não grava/overwrita o arquivo .qgz do projeto — ele apenas lê o projeto em memória e escreve
-  arquivos de exportação no disco. Ainda assim, sempre faça backup antes de executar.
+          "substituir" → Sobrescreve automaticamente os arquivos existentes.
 
-"""
+    🖨️ Processo de Exportação
 
+          Para cada layout encontrado no projeto, o script executa as seguintes etapas:
+
+          Limpeza do nome do layout: remove caracteres inválidos (<>:"/\|?*).
+
+          Exportação para PDF: utiliza QgsLayoutExporter.PdfExportSettings().
+
+          Exportação para PNG: usa QgsLayoutExporter.ImageExportSettings(), mantendo o DPI original.
+
+          Mensagens de status são exibidas no console, informando o progresso e eventuais erros.
+
+          Exemplo de saída:
+
+    🖨️ Exportando 3 layout(s) para C:\ProjetosQGIS\exports...
+
+          ✅ Mapa_Topografico exportado como PDF e PNG.
+          ✅ Carta_Geologica exportado como PDF e PNG.
+          ✅ Perfil_Solo exportado como PDF e PNG.
+
+    🎉 Exportação concluída com sucesso!
+
+    ⚠️ Tratamento de Erros
+
+          Mostra mensagens de erro individualmente por layout.
+
+          Continua exportando os demais layouts mesmo após um erro.
+
+          Interrompe apenas se o valor de modo_arquivos for inválido.
+
+          Captura erros inesperados e exibe a mensagem completa no console.
+
+    🧩 Resumo Técnico do Funcionamento
+
+          Importação dos módulos
+
+          QgsProject e QgsLayoutExporter para acessar e exportar os layouts.
+
+          os e datetime para manipulação de caminhos e arquivos.
+
+          Obtenção do caminho do projeto
+
+          Usa QgsProject.instance().homePath() para localizar o diretório atual.
+
+          Criação da pasta de saída (exports)
+
+          É criada automaticamente se ainda não existir.
+
+          Listagem e exportação dos layouts
+
+          O script percorre todos os layouts e gera arquivos PDF e PNG para cada um.
+
+          Mensagens de feedback no console
+
+          Exibe status detalhado de cada exportação, informando sucesso ou erro.
+
+    💡 Boas Práticas
+
+          Dê nomes curtos e sem caracteres especiais aos layouts.
+
+          Salve o projeto antes de executar o script.
+
+          Evite caminhos de rede (use locais no disco).
+
+          Faça backup da pasta exports se for usar o modo "substituir".
+
+          Pode ser integrado a atalhos ou botões personalizados no QGIS.
+
+    ✅ Resultado Final
+
+          Após a execução, você terá:
+
+          Todos os layouts do projeto exportados automaticamente.
+
+          Arquivos em PDF e PNG prontos para uso.
+
+          Nenhuma alteração feita no projeto QGIS original.
+
+    🧾 Informações Complementares
+
+          Autor: M. Martinelli
+
+          Data: 31/10/2025
+
+          Compatível com: QGIS 3.22 ou superior
+
+          Linguagem: Python 3
+
+          Ambiente: Console Python do QGIS
+
+    🪶 Licença e Uso
+
+          Este script pode ser usado e adaptado livremente, desde que mantida a autoria original.
+          Recomenda-se documentar alterações com data e autor para controle de versões.
